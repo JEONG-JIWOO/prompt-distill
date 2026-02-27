@@ -1,0 +1,10 @@
+# Research & development (not part of distributed skill)
+research/
+*.design.md
+
+# Repo meta
+.git/
+.github/
+LICENSE
+README.md
+.skillignore
