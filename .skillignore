@@ -1,6 +1,7 @@
 # Research & development (not part of distributed skill)
 research/
 *.design.md
+tests/
 
 # Repo meta
 .git/
@@ -8,3 +9,9 @@ research/
 LICENSE
 README.md
 .skillignore
+.env
+.env.example
+.gitignore
+.venv/
+__pycache__/
+pyproject.toml

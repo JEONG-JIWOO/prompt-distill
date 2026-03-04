@@ -1102,3 +1102,222 @@ prompt-distill의 디자인 근거가 되는 논문, 문서, 도구 모음.
 - Tier 3 축약의 최적 길이: 8-20 단어 (DETAIL + OpenAI "single sentence" 근거) — 프로젝트 특화 규칙에 적절
 - Tier 4 보존: 길이 제한 없음, 의미 완전성이 우선
 - 벤치마크 활용: InFoBench DRFR로 압축 전후 개별 지시 준수율 검증 가능
+
+---
+
+## 23. Coding Task Benchmarks for Compression Evaluation
+
+> 압축 전후 코딩 품질 비교를 위한 표준 벤치마크. 사용자가 태스크를 직접 작성할 필요 없이 기존 데이터셋을 활용.
+
+### 핵심 발견: 전용 벤치마크는 없으나 기존 도구 조합으로 해결 가능
+
+"CLAUDE.md 지시 파일 품질을 측정하는 전용 벤치마크"는 아직 존재하지 않음. Arize의 SWE-bench 방법론이 가장 가깝고, InFoBench DRFR을 커스텀 적용하는 것이 가장 실용적.
+
+### 추천 순위별 벤치마크
+
+#### Rank 1: Arize SWE-bench Methodology (최적)
+
+> CLAUDE.md 평가용으로 이미 검증된 유일한 방법론. +5-15% 성능 차이를 탐지.
+
+- 데이터셋: SWE-bench Lite 300 이슈 (6 repo 학습용, 6 repo 테스트용 분리)
+- 평가: Fail-to-Pass 테스트 실행
+- 비용: $90-300/회, A/B 비교 = $180-600
+- 결과: Claude Code +5%, Cline +15% — 시스템 프롬프트 최적화만으로 달성
+
+| 자료 | URL |
+|---|---|
+| GitHub (재현 코드) | https://github.com/Arize-ai/prompt-learning |
+| 간편 실행 도구 | https://github.com/jimmc414/claudecode_gemini_and_codex_swebench |
+| SWE-bench 본체 | https://github.com/SWE-bench/SWE-bench |
+
+#### Rank 2: BigCodeBench (중상)
+
+> 1,140개 태스크, `--instruction_prefix` 플래그로 시스템 프롬프트 주입 가능.
+
+- 태스크: 1,140 (full) / 148 (hard subset), 139개 라이브러리, 7개 도메인
+- 평가: 유닛 테스트 (평균 5.6개/문제, 99% branch coverage)
+- 비용: $5-15/회
+- "instruct" 스플릿이 시스템 프롬프트 영향에 가장 민감
+
+| 자료 | URL |
+|---|---|
+| GitHub | https://github.com/bigcode-project/bigcodebench |
+| HuggingFace | https://huggingface.co/datasets/bigcode/bigcodebench |
+
+#### Rank 3: EvalPlus — HumanEval+ / MBPP+ (빠른 sanity check)
+
+> 가장 저렴하고 빠른 검증. 압축이 치명적 손상을 일으키는지 확인용.
+
+- HumanEval+: 164 문제, 80x 추가 테스트 (문제당 ~764 테스트)
+- MBPP+: 427 문제 (sanitized), 35x 추가 테스트
+- 평가: pass@k, 완전 자동
+- 비용: $1-5/회
+
+| 자료 | URL |
+|---|---|
+| EvalPlus | https://github.com/evalplus/evalplus |
+| HumanEval (원본) | https://github.com/openai/human-eval |
+| MBPP (원본) | https://huggingface.co/datasets/google-research-datasets/mbpp |
+
+#### Rank 4: Aider Polyglot Benchmark (중상)
+
+> "edit format compliance" 메트릭이 지시 준수 측정에 고유하게 유용.
+
+- 태스크: 225개 (C++, Go, Java, JS, Python, Rust)
+- 평가: (1) 정답률, (2) edit format 준수율 — 시스템 프롬프트 포맷 지시 준수 직접 측정
+- 비용: $5-15/회
+- 제한: aider 하네스에 커스텀 시스템 프롬프트 주입 시 코드 수정 필요
+
+| 자료 | URL |
+|---|---|
+| 벤치마크 데이터 | https://github.com/Aider-AI/polyglot-benchmark |
+| 벤치마크 하네스 | https://github.com/Aider-AI/aider/tree/main/benchmark |
+| 리더보드 | https://aider.chat/docs/leaderboards/ |
+
+#### 부적합 벤치마크 (참고용)
+
+| 벤치마크 | 태스크 수 | 부적합 사유 |
+|---|---|---|
+| LiveCodeBench | 500+ | 경쟁 프로그래밍, 시스템 프롬프트 영향 미미 |
+| CodeContests | 13,500 | 알고리즘 문제, 규모 과대, 시스템 프롬프트 무관 |
+
+#### Promptfoo (프레임워크, 데이터셋 아님)
+
+> A/B 비교 인프라. 데이터셋이 아니라 위 벤치마크들과 결합하여 사용.
+
+- 내장 코딩 데이터셋: **없음** (안전성/red-teaming 데이터셋만 내장)
+- 용도: YAML 설정으로 원본 vs 압축 프롬프트 비교, side-by-side UI
+- CI/CD 통합에 최적
+
+| 자료 | URL |
+|---|---|
+| GitHub | https://github.com/promptfoo/promptfoo |
+
+### 관련 논문
+
+| 논문 | URL | 핵심 |
+|---|---|---|
+| Agent READMEs (2025) | https://arxiv.org/html/2511.12884v1 | 2,303개 에이전트 컨텍스트 파일(CLAUDE.md 등) 실증 분석 |
+| On the Impact of AGENTS.md | https://arxiv.org/pdf/2601.20404 | AGENTS.md 파일이 에이전트 성능에 미치는 영향 직접 연구 |
+| CODEPROMPTZIP (2025) | https://arxiv.org/abs/2502.14925 | 코드 특화 프롬프트 압축, 타입 인식 토큰 중요도 분석 |
+
+### 실용적 실행 계획
+
+| 단계 | 벤치마크 | 비용 | 소요 시간 |
+|---|---|---|---|
+| Quick validation | EvalPlus HumanEval+ | ~$10 | 1시간 |
+| Rigorous evaluation | Arize SWE-bench | ~$200-600 | 1일 |
+| Ongoing regression | Promptfoo + 30-50 태스크 | ~$5/회 | 30분 |
+
+**prompt-distill 적용**: Quick validation → Rigorous evaluation 순서로 진행. EvalPlus에서 pass@1 하락이 없으면 SWE-bench로 정밀 측정. Promptfoo로 CI 파이프라인 구축하여 압축 알고리즘 변경 시마다 자동 회귀 테스트.
+
+---
+
+## 24. Instruction-Following Evaluation Benchmarks
+
+> 압축이 개별 지시를 잃지 않았는지 검증하는 벤치마크. 코딩 품질과 별개로 "지시 준수율" 자체를 측정.
+
+### 핵심 접근: InFoBench DRFR 방식의 커스텀 적용
+
+CLAUDE.md의 각 지시를 원자적으로 분해 → 각각에 대해 준수 여부를 자동 판정. **테스트 생성은 1회 비용, 이후 평가는 $5-13/변형으로 반복 가능.**
+
+### 직접 적용 가능한 도구
+
+#### InFoBench — DRFR (Decomposed Requirement Following Ratio)
+
+> prompt-distill에 **가장 직접 적용 가능**. 복잡한 지시를 원자적 요구사항으로 분해하여 개별 판정.
+
+- 방식: 지시 → 원자적 sub-requirement 분해 → GPT-4가 각각 Yes/No 판정
+- 데이터셋: 500개 지시, 2,250개 분해 질문
+- DRFR = (준수된 요구사항) / (전체 요구사항)
+- CLAUDE.md 적용: 원본 CLAUDE.md를 분해 → 압축본으로 동일 태스크 실행 → 개별 지시 준수율 비교
+
+| 자료 | URL |
+|---|---|
+| GitHub | https://github.com/qinyiwei/InfoBench |
+| HuggingFace | https://huggingface.co/datasets/kqsong/InFoBench |
+
+#### DeepEval — PromptAlignmentMetric
+
+> 10분 안에 셋업 가능. 빠른 프로토타이핑용.
+
+- 방식: `PromptAlignmentMetric(prompt_instructions=[...])` → (준수 지시 수 / 전체 지시 수) 자동 계산
+- 장점: Python 패키지, 코드 10줄로 실행 가능
+- 제한: 커스텀 채점 기준 세밀 조정 어려움
+
+| 자료 | URL |
+|---|---|
+| GitHub | https://github.com/confident-ai/deepeval |
+
+### 표준 IF 벤치마크 (참고용)
+
+#### IFEval (Google, 2023)
+
+> 25가지 프로그래밍적으로 검증 가능한 포맷 제약. Judge 비용 $0 (결정론적 Python 코드로 검증).
+
+- 태스크: ~500 프롬프트, 25가지 지시 유형 (단어 수, JSON 포맷, 키워드 빈도 등)
+- 제한: 포맷 제약만 테스트 가능. "함수형 프로그래밍 선호" 같은 의미적 지시는 불가
+
+| 자료 | URL |
+|---|---|
+| GitHub | https://github.com/google-research/google-research/tree/master/instruction_following_eval |
+| HuggingFace | https://huggingface.co/datasets/google/IFEval |
+
+#### FollowBench
+
+> 5개 카테고리(Content, Situation, Style, Format, Example)에서 다단계 제약 에스컬레이션.
+
+- 방식: 같은 태스크에 제약을 점진적으로 추가하며 어디서 실패하는지 관찰
+- 제한: 고정 태스크 셋, 커스텀 지시 적용 어려움
+
+| 자료 | URL |
+|---|---|
+| GitHub | https://github.com/YJiangcm/FollowBench |
+| HuggingFace | https://huggingface.co/datasets/YuxinJiang/FollowBench |
+
+#### ManyIFEval
+
+> 최대 10개 지시 동시 부여. CLAUDE.md = "다수 동시 지시"이므로 개념적으로 관련.
+
+- 공개 코드: 없음 (논문만)
+- 논문: https://arxiv.org/abs/2509.21051
+
+### 일반 품질 비교 도구
+
+| 도구 | 태스크 수 | 비용 | 방식 | 적합도 |
+|---|---|---|---|---|
+| Arena-Hard-Auto | 500 | $20-50 | 쌍대 LLM-as-Judge, 위치 편향 제거 | 전체 품질 비교용 |
+| MT-Bench | 80 | ~$5 | GPT-4 1-10점 채점, 멀티턴 | 대화 품질, 저렴 |
+| AlpacaEval | 805 | <$10 | 쌍대 비교, 길이 편향 보정, Chatbot Arena 0.98 상관 | A/B 비교에 좋음 |
+
+| 자료 | URL |
+|---|---|
+| Arena-Hard-Auto | https://github.com/lmarena/arena-hard-auto |
+| MT-Bench | https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge |
+| AlpacaEval | https://github.com/tatsu-lab/alpaca_eval |
+
+### 자동화 파이프라인 설계
+
+```
+[1단계 — 1회 실행, 캐시]
+CLAUDE.md 원본
+    ↓ LLM 분해
+원자적 지시 목록 (예: 58개)
+    ↓ LLM 생성
+지시별 테스트 시나리오 + 검증 방법 분류
+    - 프로그래밍적 검증 가능 (IFEval 방식): regex/parser
+    - 의미적 검증 필요 (InFoBench 방식): LLM-as-Judge
+
+[2단계 — 변형마다 반복, $5-13/회]
+압축본 CLAUDE.md → 모델에 시스템 프롬프트로 주입
+    ↓ 테스트 시나리오 실행
+    ↓ 검증 (프로그래밍적 + 의미적)
+DRFR 점수 + 개별 지시 pass/fail 리포트
+```
+
+**prompt-distill 적용**:
+- **1차 검증**: DeepEval `PromptAlignmentMetric`으로 빠르게 프로토타입 (~10분 셋업)
+- **정식 검증**: InFoBench DRFR 커스텀 파이프라인 ($5-13/변형)
+- **코딩 품질 검증**: EvalPlus (sanity) → SWE-bench (rigorous)
+- **CI 통합**: Promptfoo YAML로 회귀 테스트 자동화
+- 핵심: **테스트 생성은 1회 비용, 평가는 저렴하게 반복** — 사용자는 압축에만 집중 가능

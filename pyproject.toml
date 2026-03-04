@@ -1,0 +1,17 @@
+[project]
+name = "prompt-distill"
+version = "0.1.0"
+description = "Token-efficient compression for AI instruction files"
+requires-python = ">=3.10"
+
+dependencies = [
+    "tiktoken>=0.5.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "deepeval>=2.0.0",
+    "openai>=1.0.0",
+    "python-dotenv>=1.0.0",
+    "pytest>=8.0.0",
+]

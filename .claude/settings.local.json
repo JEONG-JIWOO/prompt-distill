@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(deepeval test run --help)",
+      "Bash(chmod +x /c/Github/prompt-distill/scripts/setup.sh /c/Github/prompt-distill/scripts/test.sh)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c \":*)",
+      "Bash(python -c \":*)"
+    ]
+  }
+}
